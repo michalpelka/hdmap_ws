@@ -1,0 +1,20 @@
+<launch>
+  <include file="$(find livox_ros_driver)/launch/livox_lidar_msg.launch"/>
+  <include file="$(find pointgrey_camera_driver)/launch/camera.launch"/>
+
+<!--   <node pkg="ublox_gps" type="ublox_gps" name="ublox" -->
+<!--         output="screen" -->
+<!--         clear_params="false" -->
+<!--         respawn="true" -->
+<!--         respawn_delay="10"> -->
+<!--     <param name="device" value="/dev/ublox_uart2"/> -->
+<!--     <param name="config_on_startup" value="false"/> -->
+<!--     <param name="publish/all" value="true"/> -->
+<!--     <param name="publish/rxm/all" value="true"/> -->
+<!--   </node> -->
+  <node pkg="nmea_navsat_driver" type="nmea_serial_driver" name="nmea_serial_driver">
+    <param name="port" value="/dev/ublox_uart2"/>
+    <param name="baud" value="38400"/>
+  </node>
+  <node pkg="web_control" type="web_control_node" name="web_control"/>
+</launch>
