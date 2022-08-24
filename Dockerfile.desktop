@@ -1,0 +1,22 @@
+FROM ros:melodic
+ENV DEBIAN_FRONTEND noninteractive
+RUN set -x && \
+  apt-get update -y -qq && \
+  apt-get upgrade -y -qq --no-install-recommends && \
+  apt-get install -y -qq \
+    build-essential \
+    ros-melodic-compressed-image-transport \
+    ros-melodic-pcl-ros \
+    ros-melodic-eigen-conversions \
+    ros-melodic-diagnostic-updater 
+COPY . /hd_mapping
+WORKDIR /hd_mapping
+
+RUN echo "source /opt/ros/melodic/setup.bash\nsource /hd_mapping/devel/setup.bash" > ~/.bashrc
+
+RUN touch /hd_mapping/src/pointgrey_camera_driver/CATKIN_IGNORE && \
+    touch /hd_mapping/src/web_control/CATKIN_IGNORE && \
+    touch /hd_mapping/src/ublox/CATKIN_IGNORE
+RUN /bin/bash -c '. /opt/ros/melodic/setup.bash; cd /hd_mapping; catkin_make' 
+ENTRYPOINT ["/bin/bash"]
+
