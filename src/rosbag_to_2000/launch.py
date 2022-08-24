@@ -5,6 +5,7 @@ import subprocess
 import os
 import rosparam
 import argparse
+import time
 
 
 if __name__ == "__main__":
@@ -20,6 +21,8 @@ if __name__ == "__main__":
     roscore_process = None
     if args.roscore:
         roscore_process = subprocess.Popen(['roscore'])
+        print ("Wait to roscore to start")
+        time.sleep(5)
 
     bag_dir = args.dir
     rate = args.rate
