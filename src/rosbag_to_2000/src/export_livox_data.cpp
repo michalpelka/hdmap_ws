@@ -9,6 +9,8 @@
 #include "livox_ros_driver/CustomPoint.h"
 #include "Eigen/Dense"
 #include "rosbag_to_2000/wgs84_do_puwg92.h"
+#include <boost/program_options.hpp>
+
 #include "algorithm"
 #define MAX_NUMBER_POINTS 1000000
 
@@ -36,14 +38,33 @@ namespace structs {
         double time_end_inclusive;
     };
 }
-int main()
+namespace po = boost::program_options;
+int main(int ac, char** av)
 {
-    const std::string fn {"/media/michal/ext/orto_photo_skierniewice/hd_skierniewice/2022-08-19T13:05:12.524438/"};
-    const std::string out_dir_name {fn+"/data5"};
-    boost::filesystem::create_directory(out_dir_name);
-    using namespace boost::filesystem;
-    recursive_directory_iterator dir_it ( fn );
+    po::variables_map vm;
+    try {
+        po::options_description desc("Allowed options");
+        desc.add_options()
+                ("help", "produce help message")
+                ("dir", po::value<std::string>(), "directory to work");
 
+
+        po::store(po::parse_command_line(ac, av, desc), vm);
+        po::notify(vm);
+
+
+    }
+    catch(const std::exception &e){
+        std::cerr << e.what() << std::endl;
+        return 1;
+    }
+    const std::string fn{vm["dir"].as<std::string>()};
+    const std::string out_dir_name {fn+"/data"};
+    boost::filesystem::create_directory(out_dir_name);
+
+    std::cout << "Processing " << fn << std::endl;
+    using namespace boost::filesystem;
+    recursive_directory_iterator dir_it(fn);
     std::vector<std::string> patches;
     while (dir_it!=recursive_directory_iterator{})
     {
