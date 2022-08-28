@@ -160,12 +160,13 @@ int main(int ac, char** av)
                 double L = cfix->longitude;
                 double B = cfix->latitude;
 
-                std::array<double, 2> xy;
-                wgs84_do_puwg92(B, L, xy.data(), xy.data() + 1);
+                double x;
+                double y;
+                wgs84_do_puwg92(B, L, &x,&y);
                 gnss_file << last_time<<";";
-                gnss_file << xy[1]<<";";
-                gnss_file << xy[0]<<";";
-                gnss_file << cfix->altitude <<";";
+                gnss_file << std::setprecision(3)<<std::fixed<< x<<";";
+                gnss_file << std::setprecision(3)<< std::fixed<< y<<";";
+                gnss_file << std::setprecision(3)<< std::fixed<< cfix->altitude <<";";
                 Eigen::Matrix3d mat =Eigen::Matrix3d::Identity();
                 gnss_file << mat(0,0) <<";";
                 gnss_file << mat(0,1) <<";";
