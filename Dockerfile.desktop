@@ -8,11 +8,12 @@ RUN set -x && \
     ros-melodic-compressed-image-transport \
     ros-melodic-pcl-ros \
     ros-melodic-eigen-conversions \
-    ros-melodic-diagnostic-updater 
+    ros-melodic-diagnostic-updater \
+    screen
 COPY . /hd_mapping
 WORKDIR /hd_mapping
 
-RUN echo "source /opt/ros/melodic/setup.bash\nsource /hd_mapping/devel/setup.bash" > ~/.bashrc
+RUN echo "source /opt/ros/melodic/setup.bash\nsource /hd_mapping/devel/setup.bash\nscreen -d -m roscore\n" > ~/.bashrc
 
 RUN touch /hd_mapping/src/pointgrey_camera_driver/CATKIN_IGNORE && \
     touch /hd_mapping/src/web_control/CATKIN_IGNORE && \

@@ -13,17 +13,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run processing fo rosbags.')
     parser.add_argument('--dir', type=str, help='directory with bag')
     parser.add_argument('--rate',  default=2, help='rate for rosbag play')
-    parser.add_argument('--roscore', default=True, help='Start roscore')
     
     args = parser.parse_args()
 
     print (args)
-    roscore_process = None
-    if args.roscore:
-        roscore_process = subprocess.Popen(['roscore'])
-        print ("Wait to roscore to start")
-        time.sleep(5)
-
     bag_dir = args.dir
     rate = args.rate
 
@@ -62,6 +55,4 @@ if __name__ == "__main__":
     # wait to end
     bag_play.wait()
     bag_record.terminate()
-    if (roscore_process is not None):
-        roscore_process.terminate()
     launch.shutdown()
