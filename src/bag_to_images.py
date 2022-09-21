@@ -40,7 +40,7 @@ def main():
             cv_img = bridge.compressed_imgmsg_to_cv2(msg)
             cv_img = cv2.cvtColor(cv_img, cv2.COLOR_BAYER_GB2RGB)
 
-            cv2.imwrite(os.path.join(args.output, "frame%06i.jpg" % count), cv_img)
+            cv2.imwrite(os.path.join(args.output, "%f.jpg" % t.to_sec()), cv_img)
             print ("Wrote image %i" % count)
 
             count += 1
