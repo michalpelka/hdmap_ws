@@ -128,6 +128,8 @@ add_executable(rosbag_to_2000
 )
 add_executable(rosbag_livox_to_dat src/export_livox_data.cpp src/wgs84_do_puwg92.cc)
 add_executable(dat_to_asc src/dat_to_asc.cpp)
+add_executable(rosbag_livox_to_pcd src/export_livox_pcd.cpp src/wgs84_do_puwg92.cc)
+add_executable(rosbag_livox_to_resso src/export_livox_to_resso.cpp src/wgs84_do_puwg92.cc)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -135,6 +137,8 @@ add_executable(dat_to_asc src/dat_to_asc.cpp)
 add_dependencies(rosbag_livox_to_dat ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(rosbag_to_2000 ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(dat_to_asc ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(rosbag_livox_to_pcd ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(rosbag_livox_to_resso ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
@@ -165,7 +169,14 @@ target_link_libraries(dat_to_asc
         ${catkin_LIBRARIES}   ${Boost_FILESYSTEM_LIBRARY}
         ${Boost_SYSTEM_LIBRARY}
         )
-
+target_link_libraries(rosbag_livox_to_pcd
+        ${catkin_LIBRARIES}   ${Boost_FILESYSTEM_LIBRARY}
+        ${Boost_SYSTEM_LIBRARY}
+        )
+target_link_libraries(rosbag_livox_to_resso
+        ${catkin_LIBRARIES}   ${Boost_FILESYSTEM_LIBRARY}
+        ${Boost_SYSTEM_LIBRARY}
+        )
 #############
 ## Install ##
 #############

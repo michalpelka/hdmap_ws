@@ -43,14 +43,21 @@ namespace structs {
 
 
 int main(){
-    const std::string fn {"/media/michal/ElementsSE/Artur-Samples/export/"};
+
+
+    const std::string fn {"/media/michal/ext/LivoxAviaMapa2022-10-16T16:34:21.577162/data/"};
     const std::string chunks_bin_fn = fn + "/" + "chunks.bin";
     std::vector<structs::ChunkFile> chunk_files;
 
     load_vector_data<structs::ChunkFile>(chunks_bin_fn, chunk_files);
+    std::ofstream txt ("/tmp/txt.asc");
 
     for (const auto &ch : chunk_files){
-        std::cout << ch.filename <<" " <<std::fixed<< ch.time_begin_inclusive<<" " << ch.time_end_inclusive << std::endl;
+        std::vector<structs::Point> file;
+        const std::string fn {"/media/michal/ext/LivoxAviaMapa2022-10-16T16:34:21.577162/data/"+std::to_string(ch.filename)+".bin"};
+        load_vector_data<structs::Point>(chunks_bin_fn, file);
+        //std::cout << ch.filename <<" " <<std::fixed<< ch.time_begin_inclusive<<" " << ch.time_end_inclusive << std::endl;
+
     }
 
 }
