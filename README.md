@@ -36,3 +36,10 @@ python src/bag_to_images.py -i /data/log_*.bag -o /data/images
 ```
 In your dataset directory `D:/2022-08-19T12_49_37.772111` the directory `images` should appear.
 
+## Work in the container - export data in resso format
+
+```
+rosrun rosbag_to_2000 rosbag_livox_to_resso --dir /data/ --max_distance 1
+```
+The parameter `max_distance` allows to adjust maximum travel distance.
+Running this tool results in creating the directory named `data_resso`
