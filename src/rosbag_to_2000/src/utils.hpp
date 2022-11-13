@@ -55,51 +55,37 @@ namespace my_utils{
     Eigen::Matrix4d getInterpolatedPose(const std::map<double, Eigen::Matrix4d> &trajectory, double query_time)
     {
         Eigen::Matrix4d ret(Eigen::Matrix4d::Zero());
-        auto it_lower = trajectory.lower_bound(query_time);
-        auto it_next = it_lower;
-        if (it_lower == trajectory.begin()){
+        auto it_next = trajectory.lower_bound(query_time);
+        if (it_next == trajectory.begin()){
             return ret;
         }
-        if (it_lower->first > query_time) {
-            it_lower = std::prev(it_lower);
-        }
-        if (it_lower == trajectory.begin()){
-            return ret;
-        }
-        if (it_lower == trajectory.end()){
-            return ret;
-        }
+        auto it_lower = std::prev(it_next);
 
-        double t1 = it_lower->first;
-        double t2 = it_next->first;
-        double difft1 = t1- query_time;
-        double difft2 = t2- query_time;
-        if (t1 == t2 && std::fabs(difft1)< 0.1){
-            ret = Eigen::Matrix4d::Identity();
-            ret.col(3).head<3>() = it_next->second.col(3).head<3>();
-            ret.topLeftCorner(3,3) = it_lower->second.topLeftCorner(3,3);
-            return ret;
-        }
+        const double t1 = it_lower->first;
+        const double t2 = it_next->first;
+        assert(t2>t1);
+        assert(query_time>=t1);
+        assert(query_time<=t2);
+        const double difft1 = t1- query_time;
+        const double difft2 = t2- query_time;
         if (std::fabs(difft1)< 0.15 && std::fabs(difft2)< 0.15 )
         {
-            assert(t2>t1);
-            assert(query_time>t1);
-            assert(query_time<t2);
             ret = Eigen::Matrix4d::Identity();
-            double res = (query_time-t1)/(t2-t1);
-            Eigen::Vector3d diff = it_next->second.col(3).head<3>() - it_lower->second.col(3).head<3>();
-            ret.col(3).head<3>() = it_next->second.col(3).head<3>() + diff*res;
+            double alpha = (query_time-t1)/(t2-t1);
+            const Eigen::Vector3d trans1 =  it_lower->second.col(3).head<3>();
+            const Eigen::Vector3d trans2 = it_next->second.col(3).head<3>();
+            ret.col(3).head<3>() = (1.0 - alpha) * trans1 + alpha * trans2;
             Eigen::Matrix3d r1 = it_lower->second.topLeftCorner(3,3).matrix();
             Eigen::Matrix3d r2 = it_next->second.topLeftCorner(3,3).matrix();
-            Eigen::Quaterniond q1(r1);
-            Eigen::Quaterniond q2(r2);
-            Eigen::Quaterniond qt = q1.slerp(res, q2);
-            ret.topLeftCorner(3,3) =  qt.toRotationMatrix();
+            Eigen::Quaterniond rot1(r1);
+            Eigen::Quaterniond rot2(r2);
+            ret.topLeftCorner(3,3) = rot1.slerp(alpha, rot2).toRotationMatrix();
             return ret;
         }
         std::cout << "Problem with : " <<  difft1 << " " << difft2 << "  q : " << query_time<< " t1 :"<<t1 <<" t2: "<<t2 << std::endl;
         return ret;
     }
+
     std::vector<bool> downsample (const std::vector<Eigen::Vector3f>& pointcloud, const float voxel_size){
         auto hash = [=](const Eigen::Vector3f& p){
             const int i = (1000*voxel_size)+std::round(p.x()/voxel_size);
