@@ -25,24 +25,10 @@
 const std::string kEnvRepo = "HD_Repo";
 
 const std::vector<std::string> topics_to_record{
-        "/camera/image_raw/compressed",
-        "/camera/camera_info",
-        "/rtcm",
-        "/fix",
-        "/vel",
-        "/time_reference",
-        "/ublox/fix",
-        "/ublox/fix_velocity",
-        "/ublox/monhw",
-        "/ublox/navclock",
-        "/ublox/navposecef",
-        "/ublox/navpvt",
-        "/ublox/navsat",
-        "/ublox/navstatus",
-        "/ublox/rxmrtcm",
-        "/ublox/rxm/raw",
-        "/livox/imu",
-        "/livox/lidar",
+        "/avia/livox/lidar",
+        "/avia/livox/imu",
+        "/mid70/livox/lidar",
+        "/mid70/livox/imu",
         "/time",
 };
 std::string GetEnv( const std::string & var ) {
@@ -70,7 +56,10 @@ namespace ds{
 
     cv::Mat img;
     cv::Mat img_thumb;
-    cv::Mat img_livox;
+    const size_t LivoxCount = 2;
+    std::array<cv::Mat,LivoxCount> img_livox;
+    std::array<int,LivoxCount> msgs_livox;
+
     unsigned int counter_images = 0;
     unsigned int counter_livox = 0;
     unsigned int counter_ublox = 0;
@@ -102,12 +91,14 @@ void livoxCallback(const sensor_msgs::Imu& msg)
     std::lock_guard<std::mutex> lck(ds::global_lock);
     ds::counter_livox++;
 }
-void livoxCallback2(const livox_ros_driver::CustomMsg& msg)
+
+
+void livoxCallback2(const livox_ros_driver::CustomMsg::ConstPtr& msg, int i)
 {
     int k  = 512;
     cv::Mat m = cv::Mat(k,k,CV_8UC3, cv:: Scalar(10, 100, 150));
 
-    for (auto &p : msg.points){
+    for (auto &p : msg->points){
         float xx = 256.0*p.z/p.x;
         float yy = 256.0*p.y/p.x;
         int xxx = std::round(xx+k/2);
@@ -123,9 +114,10 @@ void livoxCallback2(const livox_ros_driver::CustomMsg& msg)
 
     }
     std::lock_guard<std::mutex> lck2(ds::img_lock);
-    ds::img_livox = m.clone();
-
+    ds::img_livox[i] = m.clone();
+    ds::msgs_livox[i]++;
 }
+
 void ubloxFixCallback(const sensor_msgs::NavSatFix &gps)
 {
     std::lock_guard<std::mutex> lck(ds::global_lock);
@@ -159,25 +151,27 @@ std::vector<uint8_t> produceImgThumb() {
     return buf;
 }
 
-std::vector<uint8_t> produceImg() {
-    std::lock_guard<std::mutex> lck(ds::img_lock);
+std::vector<uint8_t> produceImgLivox(int i) {
     std::vector<uint8_t> buf;
-    if (ds::img_livox.empty()){
-        return buf;
+    if (i >=0 && i< ds::img_livox.size()) {
+        std::lock_guard<std::mutex> lck(ds::img_lock);
+
+        if (ds::img_livox[i].empty()) {
+            return buf;
+        }
+        cv::imencode(".JPG", ds::img_livox[i], buf);
     }
-    cv::imencode(".JPG", ds::img_livox, buf );
     return buf;
 }
 
-std::vector<uint8_t> produceImgLivox() {
-    std::lock_guard<std::mutex> lck(ds::img_lock);
-    std::vector<uint8_t> buf;
-    if (ds::img_livox.empty()){
-        return buf;
-    }
-    cv::imencode(".JPG", ds::img_livox, buf );
-    return buf;
+std::vector<uint8_t> produceImgLivox0() {
+    return produceImgLivox(0);
 }
+std::vector<uint8_t> produceImgLivox1() {
+    return produceImgLivox(1);
+}
+
+
 
 
 std::string produceReport() {
@@ -189,6 +183,10 @@ std::string produceReport() {
     // msgs
     pt.put("status.image.count",ds::counter_images);
     pt.put("status.livox.count",ds::counter_livox);
+
+    for (int i =0; i < ds::LivoxCount; i++){
+        pt.put("status.livox_"+std::to_string(i)+".count",ds::msgs_livox[i]);
+    }
     pt.put("status.ublox.count",ds::counter_ublox);
     pt.put("status.ublox.accuracy",ds::accuracy);
     pt.put("status.ublox.status",ds::status_ublox);
@@ -287,20 +285,21 @@ int main(int argc, char**argv){
     health_server::setTriggerHandler(stop_recording, "stop_bag");
 
     health_server::setDataHandler(produceImgThumb, "img_thumb");
-    health_server::setDataHandler(produceImg, "img_full");
-    health_server::setDataHandler(produceImgLivox, "img_livox");
-
+    health_server::setDataHandler(produceImgLivox0, "img_livox0");
+    health_server::setDataHandler(produceImgLivox1, "img_livox1");
 
     ros::init(argc, argv, "image_listener");
     ros::NodeHandle nh;
     image_transport::ImageTransport it(nh);
     image_transport::Subscriber sub = it.subscribe("camera/image_raw", 1, imageCallback);
-    ros::Subscriber sub1 = nh.subscribe("/livox/imu",1, livoxCallback);
+    ros::Subscriber sub1 = nh.subscribe("/avia/livox/imu",1, livoxCallback);
     ros::Subscriber sub2 = nh.subscribe("/ublox/fix",1, ubloxFixCallback);
     ros::Subscriber sub22 = nh.subscribe("/fix",1, ubloxFixCallback);
 
     ros::Subscriber sub3 = nh.subscribe("/diagnostics",1, diagnosticCallback);
-    ros::Subscriber sub4 = nh.subscribe("/livox/lidar",1, livoxCallback2);
+    ros::Subscriber sub4 = nh.subscribe<livox_ros_driver::CustomMsg>("/avia/livox/lidar",1, boost::bind(livoxCallback2,_1,0));
+    ros::Subscriber sub5 = nh.subscribe<livox_ros_driver::CustomMsg>("/mid70/livox/lidar",1, boost::bind(livoxCallback2,_1,1));
+
     ros::spin();
 
     return 0;

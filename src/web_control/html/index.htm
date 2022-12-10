@@ -20,7 +20,8 @@
                 var obj = jQuery.parseJSON(data);
 
                 $('.msgs_camera').text( obj.status.image.count);
-                $('.msgs_livox').text( obj.status.livox.count);
+                $('.msgs_livox_avia').text( obj.status.livox_0.count);
+                $('.msgs_livox_mid70').text( obj.status.livox_1.count);
                 $('.msgs_ublox').text( obj.status.ublox.count);
                 $('.bag_info').text(obj.status.bag.file_list);
                 $('.disk').text(obj.status.system.disk+" Gb") ;
@@ -31,10 +32,12 @@
         };
         function populateImg(){
 
-            var node = document.getElementById('camera');
-            node.src = host_global+"/data/img_thumb?time="+new Date().getTime();
-            var node2 = document.getElementById('livox');
-            node2.src = host_global+"/data/img_livox?time="+new Date().getTime();
+            // var node = document.getElementById('camera');
+            // node.src = host_global+"/data/img_thumb?time="+new Date().getTime();
+            var node1 = document.getElementById('livox0');
+            node1.src = host_global+"/data/img_livox0?time="+new Date().getTime();
+            var node2 = document.getElementById('livox1');
+            node2.src = host_global+"/data/img_livox1?time="+new Date().getTime();
 
         };
         setInterval(function() {populate();}, 100);
@@ -133,6 +136,7 @@
 </head>
 
 <body>
+<p>Multi livox version</p>
 <button type="button" id="btn_trigg1" onclick="start_bag()" style="display:inline;" class="block">Start Bag</button>
 <button type="button" id="btn_trigg2" onclick="stop_bag()" style="display:inline;"class="block" >Stop Bag</button>
 <div>
@@ -140,14 +144,16 @@
     <table>
         <tr>
             <th>Camera</th>
-            <th>Livox</th>
+            <th>LivoxAvia</th>
+            <th>LivoxMid70</th>
             <th>Ublox</th>
             <th>Disk</th>
             
         </tr>
         <tr>
             <td class="msgs_camera">-1</td>
-            <td class="msgs_livox">-1</td>
+            <td class="msgs_livox_avia">-1</td>
+            <td class="msgs_livox_mid70">-1</td>
             <td class="msgs_ublox">-1</td>
             <td class="disk">-1</td>
             
@@ -156,7 +162,9 @@
     <p class="dir_name"></p>
     <pre class="bag_info"></pre>
     <pre class="diagnostic"></pre>
-    <img id="camera" ></img>
-    <img id="livox" ></img>
+    <p><img id="camera" ></img></p>
+    <img id="livox0" ></img>
+    <img id="livox1" ></img>
+
 </body>
 </html>
