@@ -48,8 +48,9 @@ private:
 
     int count_since_turnover = 0;
     int last_timestamp = 0;
-    const float expected_framerate=100;
+    const float expected_framerate=101;
     double middle_handler_fired_at=0;
+    double last_timestamp_sent = 0;
     std::function<void(double, double)> handler_pps_middle;
     std::function<void(double,std::array<double,4>,std::array<double,3>,
             std::array<double,3>,std::array<double,3>)> data_handler;

@@ -160,15 +160,18 @@ int main(int argc, char **argv)
 //    f1.rotate(Eigen::AngleAxisf(M_PI, Eigen::Vector3f::UnitZ()));
     f2.rotate(Eigen::AngleAxisf(-M_PI/2, Eigen::Vector3f::UnitZ()) * Eigen::AngleAxisf(M_PI, Eigen::Vector3f::UnitX()));
 
+    //auto livox_imu = n.subscribe("/avia/livox/imu",10,imu_callback);
+    auto livox_imu = n.subscribe("/vn100/imu",10,imu_callback);
+
 
     std::shared_ptr<LivoxDataSource> src1 = std::make_shared<LivoxDataSource>("front", "/avia/livox/lidar", 0, n);
-    std::shared_ptr<LivoxDataSource> src2 = std::make_shared<LivoxDataSource>("side", "/mid70/livox/lidar", 6, n);
-    auto livox_imu = n.subscribe("/avia/livox/imu",10,imu_callback);
     src1->SetCalibration(f1);
-    src2->SetCalibration(f2);
-
     livoxDataSources.push_back(src1);
+    
+    std::shared_ptr<LivoxDataSource> src2 = std::make_shared<LivoxDataSource>("side", "/mid70/livox/lidar", 6, n);
+    src2->SetCalibration(f2);
     livoxDataSources.push_back(src2);
+
 
     ros::Timer timer = n.createTimer(ros::Duration(0.1), timerCallback);
 

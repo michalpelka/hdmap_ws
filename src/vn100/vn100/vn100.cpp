@@ -28,6 +28,8 @@ void vn100_client::vn100_client_listener_thread_worker(){
 
                 auto v = vn100_parsing::vnqmr_parse(data_striped);
                 if (v.timestamp > last_timestamp) {
+
+                    std::cout << "count_since_turnover " << count_since_turnover << std::endl;
                     this->count_since_turnover = 0;
                 }
 
@@ -39,7 +41,6 @@ void vn100_client::vn100_client_listener_thread_worker(){
                 }
 //                std::cout << "ts_sec "<< ts_sec << std::endl;
                 if (middle_handler_fired_at < whole_sec && frac_sec > 0.5){
-                    std::cout << "<<<<<<< PPS On IMU " <<  ts_sec << std::endl;
                     if(handler_pps_middle){
                         handler_pps_middle(whole_sec, frac_sec);
                     }
@@ -47,6 +48,7 @@ void vn100_client::vn100_client_listener_thread_worker(){
                 }
 
                 last_timestamp = v.timestamp;
+                last_timestamp_sent = ts_sec;
                 this->count_since_turnover++;
                 msgs++;
             }

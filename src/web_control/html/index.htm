@@ -27,6 +27,7 @@
                 $('.disk').text(obj.status.system.disk+" Gb") ;
                 $('.dir_name').text("Recording to : " + obj.status.bag.directory);
                 $('.diagnostic').text(obj.status.ublox.status +"\n" +obj.status.ublox.accuracy) ;
+                $('.vn100').text( obj.status.vn100.count);
 
             });
         };
@@ -148,6 +149,8 @@
             <th>LivoxMid70</th>
             <th>Ublox</th>
             <th>Disk</th>
+            <th>VN100</th>
+            
             
         </tr>
         <tr>
@@ -156,6 +159,8 @@
             <td class="msgs_livox_mid70">-1</td>
             <td class="msgs_ublox">-1</td>
             <td class="disk">-1</td>
+            <td class="vn100">-1</td>
+            
             
         </tr>
     </table>

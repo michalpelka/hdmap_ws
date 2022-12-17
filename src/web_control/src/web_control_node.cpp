@@ -29,6 +29,10 @@ const std::vector<std::string> topics_to_record{
         "/avia/livox/imu",
         "/mid70/livox/lidar",
         "/mid70/livox/imu",
+        "/vn100/imu",
+        "/vn100/imu_wall"
+	"/livox/imu",
+	"/livox/lidar",
         "/time",
 };
 std::string GetEnv( const std::string & var ) {
@@ -63,6 +67,8 @@ namespace ds{
     unsigned int counter_images = 0;
     unsigned int counter_livox = 0;
     unsigned int counter_ublox = 0;
+    unsigned int counter_vn100 = 0;
+    
     std::string status_ublox;
     std::string accuracy;
 
@@ -93,6 +99,11 @@ void livoxCallback(const sensor_msgs::Imu& msg)
 }
 
 
+void vn100Callback(const sensor_msgs::Imu& msg)
+{
+    std::lock_guard<std::mutex> lck(ds::global_lock);
+    ds::counter_vn100++;
+}
 void livoxCallback2(const livox_ros_driver::CustomMsg::ConstPtr& msg, int i)
 {
     int k  = 512;
@@ -190,7 +201,7 @@ std::string produceReport() {
     pt.put("status.ublox.count",ds::counter_ublox);
     pt.put("status.ublox.accuracy",ds::accuracy);
     pt.put("status.ublox.status",ds::status_ublox);
-
+    pt.put("status.vn100.count",ds::counter_vn100);
 
     // bag
     pt.put("status.bag.directory",ds::current_record_dir);
@@ -295,6 +306,8 @@ int main(int argc, char**argv){
     ros::Subscriber sub1 = nh.subscribe("/avia/livox/imu",1, livoxCallback);
     ros::Subscriber sub2 = nh.subscribe("/ublox/fix",1, ubloxFixCallback);
     ros::Subscriber sub22 = nh.subscribe("/fix",1, ubloxFixCallback);
+    
+    ros::Subscriber sub6 = nh.subscribe("/vn100/imu",1, vn100Callback);
 
     ros::Subscriber sub3 = nh.subscribe("/diagnostics",1, diagnosticCallback);
     ros::Subscriber sub4 = nh.subscribe<livox_ros_driver::CustomMsg>("/avia/livox/lidar",1, boost::bind(livoxCallback2,_1,0));
