@@ -196,6 +196,8 @@ class BoostSerial
      */
     std::vector<uint8_t> readBytesUntil(uint8_t givenByte, uint16_t len = 0xFFFF);
 
+    std::vector<uint8_t> readBytesUntil(const std::vector<uint8_t>& givenBytes, uint16_t len = 0xFFFF);
+
     /**
      * @brief Read string until \0 or timeout.
      * 

@@ -264,6 +264,47 @@ std::vector<uint8_t> BoostSerial::readBytesUntil(uint8_t givenByte, uint16_t len
     return res;
 }
 
+std::vector<uint8_t> BoostSerial::readBytesUntil(const std::vector<uint8_t>& givenBytes, uint16_t len){
+    auto start = std::chrono::system_clock::now();
+    bool endFlag = false;
+    std::vector<uint8_t> res;
+    //check whether given number of bytes has been read
+    //or whether timeout happened
+    while (res.size() < len && !endFlag)
+    {
+        //check whether timeout happened
+        //and if so, set timeout flag
+        auto now = std::chrono::system_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - start);
+        if (elapsed.count() >= timeoutVal)
+        {
+            endFlag = true;
+        }
+            //else check if there is data in the buffer
+            //and if so, push it to res
+        else
+        {
+            int16_t readByte = read();
+            if (res.size()>= givenBytes.size())
+            {
+                endFlag = true;
+                for (int i=0; i < givenBytes.size(); i++)
+                {
+                    if (  *(res.rbegin()-i) != givenBytes[i]){
+                        endFlag = false;
+                    }
+                }
+            }
+            else if (readByte > -1)
+            {
+                res.push_back(readByte);
+                start = std::chrono::system_clock::now();
+            }
+        }
+    }
+    return res;
+}
+
 std::string BoostSerial::readStringUntil(char givenChar)
 {
     auto start = std::chrono::system_clock::now();

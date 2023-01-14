@@ -32,17 +32,17 @@ public:
 
 
         const auto imu_data_handler = [&](double ts,
-                std::array<double,4> q,std::array<double,3> mag,
-                                          std::array<double,3> acc,std::array<double,3>gyro){
+                std::array<float,4> q, std::array<float,3> acc,std::array<float,3>gyro){
             sensor_msgs::Imu imu_msg;
 
             Eigen::Matrix3f m;
             m = Eigen::AngleAxisf(-M_PI, Eigen::Vector3f::UnitX());
 
-            imu_msg.orientation.x = mag[0];
-            imu_msg.orientation.y = mag[1];
-            imu_msg.orientation.z = mag[2];
-            imu_msg.orientation.w = mag[3];
+            imu_msg.orientation.x = q[0];
+            imu_msg.orientation.y = q[1];
+            imu_msg.orientation.z = q[2];
+            imu_msg.orientation.w = q[3];
+
             Eigen::Vector3f gyro_raw(gyro[0],gyro[1],gyro[2]);
             Eigen::Vector3f gyro_rawt = m* gyro_raw;
             imu_msg.angular_velocity.x = gyro_rawt.x();

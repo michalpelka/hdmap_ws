@@ -115,7 +115,7 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-  include 3rd/Boost-Serial-Port vn100/
+  include 3rd/Boost-Serial-Port vn100/ 3rd/hexdump
   ${catkin_INCLUDE_DIRS}
 )
 
