@@ -79,7 +79,12 @@ void vn100_client::vn100_client_listener_thread_worker(){
                     VN100BINARY::parse(data,parsed);
                     const double timestamp = static_cast<double>(parsed.TimeStartup) / 1e9;
                     if (data_handler){
-                        data_handler(timestamp, parsed.Quaternion, parsed.Accel, parsed.AngularRate);
+//                        std::array<float,3> acc{parsed.Imu[0],parsed.Imu[1],parsed.Imu[2]};
+//                        std::array<float,3> gyro{parsed.Imu[3],parsed.Imu[4],parsed.Imu[5]};
+                        std::array<float,3> acc{parsed.Accel};
+                        std::array<float,3> gyro{parsed.AngularRate};
+
+                        data_handler(timestamp, parsed.Quaternion, acc,gyro);
                     }
                     const double whole_sec = std::floor(timestamp);
                     const double frac_sec = timestamp - whole_sec;

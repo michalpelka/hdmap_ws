@@ -27,7 +27,7 @@
   <Register>
     <Id>32</Id>
     <Name>SyncControl</Name>
-    <Values>3,0,0,0,3,1,400,5000000,0</Values>
+    <Values>3,0,0,0,3,0,400,50000000,0</Values>
   </Register>
   <Register>
     <Id>43</Id>
@@ -37,6 +37,6 @@
   <Register>
     <Id>75</Id>
     <Name>BinaryOutput1</Name>
-    <Values>1,4,01,1331</Values>
+    <Values>1,5,01,1331</Values>
   </Register>
 </VectorNav_Sensor>

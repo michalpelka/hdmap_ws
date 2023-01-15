@@ -83,7 +83,7 @@
         </group>
     </group>
     <node pkg="web_control" type="web_control_node" name="web_control"/>
-    <node pkg="multi_livox" type="livox_multi" name="multi_livox"/>
+    <!-- <node pkg="multi_livox" type="livox_multi" name="multi_livox"/> -->
     <node pkg="vn100" type="vn100_driver" name="vn100_driver"/>
     
 </launch>

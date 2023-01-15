@@ -17,7 +17,7 @@ public:
             m_livoxName(livoxName),
             m_startNumberOfLine(lineNumber)
     {
-        m_inputMessages = std::make_shared<ros::Subscriber>(n.subscribe(livoxTopicName, 10, &LivoxDataSource::messageFromLivox, this));
+        m_inputMessages = std::make_shared<ros::Subscriber>(n.subscribe(livoxTopicName, 1, &LivoxDataSource::messageFromLivox, this));
     }
 private:
     void messageFromLivox(const livox_ros_driver::CustomMsgConstPtr data){
@@ -30,11 +30,11 @@ private:
         resultMsg.rsvd = data->rsvd;
         resultMsg.points.resize(data->point_num);
         const double livoxTimeStamp = 1.0*data->timebase / 1e9;
-        if (getFrac(m_oldLivoxTime) > 0.7) {
-            if (getFrac(livoxTimeStamp) < .2)
+        if (getFrac(m_oldLivoxTime) > 0.95) {
+            if (getFrac(livoxTimeStamp) < .1)
             {
                 // trunover on livox
-                ROS_INFO("PPS on %s", m_livoxName.c_str());
+                ROS_INFO("PPS on %s %f -> %f", m_livoxName.c_str(), m_currentWhole, m_currentWhole+1);
                 m_currentWhole+=1.0;
             }
         }
@@ -62,8 +62,9 @@ private:
 public:
     void setCurrentTimestamp(double timestamp){
         double whole = std::floor(timestamp);
+        std::cout <<"Synchronization on " << m_livoxName <<" : "<< timestamp <<" (" << m_currentWhole <<")"<< std::endl;
         if (whole != m_currentWhole){
-            std::cout <<"Error on synchronization on " << m_livoxName << std::endl;
+            std::cout <<"Error on synchronization on " << m_livoxName  <<" : "<< timestamp <<" (" << m_currentWhole <<")" << std::endl;
         }
         m_currentWhole = whole;
     }
@@ -87,12 +88,64 @@ public:
     }
 };
 
+class LivoxDataSourceImu {
+private:
+    std::unique_ptr<ros::Publisher> publisher;
+public:
+    LivoxDataSourceImu(const std::string &livoxName, const std::string &livoxTopicNameImu,
+                       const std::string &livoxRepublish, ros::NodeHandle &n) : m_livoxName(livoxName)
+    {
+        m_inputMessages = std::make_shared<ros::Subscriber>(
+        n.subscribe(livoxTopicNameImu, 1, &LivoxDataSourceImu::messageFromLivoxImu, this));
+        publisher = std::make_unique<ros::Publisher>(n.advertise<sensor_msgs::Imu>(livoxRepublish, 10));
+    }
+
+private:
+    void messageFromLivoxImu(const sensor_msgs::ImuConstPtr data) {
+        sensor_msgs::Imu resultMsg = *data;
+        const double livoxTimeStamp = 1.0 * data->header.stamp.toSec();
+        if (getFrac(m_oldLivoxTime) > 0.95) {
+            if (getFrac(livoxTimeStamp) < .1) {
+                // trunover on livox
+                ROS_INFO("PPS on %s %f -> %f", m_livoxName.c_str(), m_currentWhole, m_currentWhole + 1);
+                m_currentWhole += 1.0;
+            }
+        }
+        m_oldLivoxTime = livoxTimeStamp;
+        const double resolved_tts = m_currentWhole + getFrac(livoxTimeStamp);
+        resultMsg.header.stamp.fromSec(resolved_tts);
+        publisher->publish(resultMsg);
+    }
+
+public:
+    void setCurrentTimestamp(double timestamp) {
+        double whole = std::floor(timestamp);
+        std::cout << "Synchronization on " << m_livoxName << " : " << timestamp << " (" << m_currentWhole << ")"
+                  << std::endl;
+        if (whole != m_currentWhole) {
+            std::cout << "Error on synchronization on " << m_livoxName << " : " << timestamp << " (" << m_currentWhole
+                      << ")" << std::endl;
+        }
+        m_currentWhole = whole;
+    }
+
+    std::string m_livoxName;
+    std::shared_ptr<ros::Subscriber> m_inputMessages;
+    double m_wholeSecTimeStamp{0};
+
+    double m_currentWhole = 0;
+    double m_oldLivoxTime = 0;
+};
+
+
 
 std::vector<std::shared_ptr<LivoxDataSource>> livoxDataSources;
+std::shared_ptr<LivoxDataSourceImu> livoxDataSourcesImu;
+
 std::unique_ptr<ros::Publisher> livox_result;
 std::unique_ptr<ros::Publisher> imu_synch;
-void timerCallback(const ros::TimerEvent&){
 
+void timerCallback(const ros::TimerEvent&){
     livox_ros_driver::CustomMsg msg;
     bool init = false;
     for (auto & src : livoxDataSources){
@@ -108,22 +161,21 @@ void timerCallback(const ros::TimerEvent&){
                     msg.points.push_back(point);
                 }
             }
-//            std::cout << src->m_livoxName << std::endl;
-
         }
         src->getBuffer().clear();
     }
     msg.point_num = msg.points.size();
     livox_result->publish(msg);
-
 }
+
 double imu_timer = 0;
 double imu_old_ts = 0;
 bool imu_to_send = false;
+
 void imu_callback(const sensor_msgs::ImuConstPtr &imu){
     double imu_curr_ts = imu->header.stamp.toSec();
-    if (getFrac(imu_old_ts) > 0.7) {
-        if (getFrac(imu_curr_ts) < .2)
+    if (getFrac(imu_old_ts) > 0.5) {
+        if (getFrac(imu_curr_ts) < .4)
         {
             // trunover on livox
             ROS_INFO("PSS on imu");
@@ -136,8 +188,14 @@ void imu_callback(const sensor_msgs::ImuConstPtr &imu){
         for (auto &src : livoxDataSources) {
             src->setCurrentTimestamp(imu_timer + getFrac(imu_curr_ts));
         }
+        livoxDataSourcesImu->setCurrentTimestamp(imu_timer + getFrac(imu_curr_ts));
+        imu_to_send = false;
     }
     sensor_msgs::Imu new_msg = *imu;
+    new_msg.linear_acceleration.x *=0.1f;
+    new_msg.linear_acceleration.y *=0.1f;
+    new_msg.linear_acceleration.z *=0.1f;
+
     new_msg.header.stamp.fromSec(imu_timer + getFrac(imu_curr_ts));
     if(imu_synch){
         imu_synch->publish(new_msg);
@@ -157,17 +215,19 @@ int main(int argc, char **argv)
     f1.translation() = Eigen::Vector3f{0,0,0};
     f2.translation() = Eigen::Vector3f{0,0,0};
 
-//    f1.rotate(Eigen::AngleAxisf(M_PI, Eigen::Vector3f::UnitZ()));
     f2.rotate(Eigen::AngleAxisf(-M_PI/2, Eigen::Vector3f::UnitZ()) * Eigen::AngleAxisf(M_PI, Eigen::Vector3f::UnitX()));
 
-    //auto livox_imu = n.subscribe("/avia/livox/imu",10,imu_callback);
+//    auto livox_imu = n.subscribe("/avia/livox/imu",10,imu_callback);
     auto livox_imu = n.subscribe("/vn100/imu",10,imu_callback);
 
 
     std::shared_ptr<LivoxDataSource> src1 = std::make_shared<LivoxDataSource>("front", "/avia/livox/lidar", 0, n);
     src1->SetCalibration(f1);
     livoxDataSources.push_back(src1);
-    
+
+    livoxDataSourcesImu = std::make_shared<LivoxDataSourceImu>("frontImu", "/avia/livox/imu", "/livox/imu_avia", n);
+
+
     std::shared_ptr<LivoxDataSource> src2 = std::make_shared<LivoxDataSource>("side", "/mid70/livox/lidar", 6, n);
     src2->SetCalibration(f2);
     livoxDataSources.push_back(src2);
