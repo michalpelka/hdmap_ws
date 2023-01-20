@@ -5,8 +5,8 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/range/iterator_range.hpp>
-#include "livox_ros_driver/CustomMsg.h"
-#include "livox_ros_driver/CustomPoint.h"
+#include "livox_ros_driver2/CustomMsg.h"
+#include "livox_ros_driver2/CustomPoint.h"
 #include "Eigen/Dense"
 #include "rosbag_to_2000/wgs84_do_puwg92.h"
 #include <boost/program_options.hpp>
@@ -171,7 +171,7 @@ int main(int ac, char** av)
 
         Eigen::Matrix4d last_pose;
         for (rosbag::MessageInstance const m: view_data) {
-            livox_ros_driver::CustomMsgConstPtr cptr = m.instantiate<livox_ros_driver::CustomMsg>();
+            livox_ros_driver2::CustomMsgConstPtr cptr = m.instantiate<livox_ros_driver2::CustomMsg>();
             if (cptr) {
                 assert(cptr->header.stamp >= last_time);
                 last_time = cptr->header.stamp;

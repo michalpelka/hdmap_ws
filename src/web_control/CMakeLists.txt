@@ -9,7 +9,7 @@ add_compile_options(-std=c++14)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   compressed_image_transport
-  roscpp livox_ros_driver
+  roscpp livox_ros_driver2
 )
 
 ## System dependencies are found with CMake's conventions

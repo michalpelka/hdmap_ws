@@ -9,7 +9,7 @@ add_compile_options(-std=c++11)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roscpp
-  rosbag livox_ros_driver
+  rosbag livox_ros_driver2
 )
 find_package(Eigen3 REQUIRED)
 

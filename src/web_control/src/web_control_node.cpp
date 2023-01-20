@@ -20,27 +20,12 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <cv_bridge/cv_bridge.h>
 
-#include <livox_ros_driver/CustomMsg.h>
+#include <livox_ros_driver2/CustomMsg.h>
 
+using LivoxCustomMsg= livox_ros_driver2::CustomMsg;
 const std::string kEnvRepo = "HD_Repo";
 
 const std::vector<std::string> topics_to_record{
-        "/camera/image_raw/compressed",
-        "/camera/camera_info",
-        "/rtcm",
-        "/fix",
-        "/vel",
-        "/time_reference",
-        "/ublox/fix",
-        "/ublox/fix_velocity",
-        "/ublox/monhw",
-        "/ublox/navclock",
-        "/ublox/navposecef",
-        "/ublox/navpvt",
-        "/ublox/navsat",
-        "/ublox/navstatus",
-        "/ublox/rxmrtcm",
-        "/ublox/rxm/raw",
         "/livox/imu",
         "/livox/lidar",
         "/time",
@@ -102,18 +87,18 @@ void livoxCallback(const sensor_msgs::Imu& msg)
     std::lock_guard<std::mutex> lck(ds::global_lock);
     ds::counter_livox++;
 }
-void livoxCallback2(const livox_ros_driver::CustomMsg& msg)
+void livoxCallback2(const LivoxCustomMsg& msg)
 {
     int k  = 512;
     cv::Mat m = cv::Mat(k,k,CV_8UC3, cv:: Scalar(10, 100, 150));
 
     for (auto &p : msg.points){
-        float xx = 256.0*p.z/p.x;
-        float yy = 256.0*p.y/p.x;
+        float xx = 15.0*p.x;
+        float yy = 15*p.y;
         int xxx = std::round(xx+k/2);
         int yyy = std::round(yy+k/2);
 
-        if (xxx > 0 && xxx <k && yyy >0&& xxx<k   ){
+        if (xxx > 0 && xxx <k && yyy >0&& yyy<k   ){
             auto t =clamp(p.x/20);
             double red   = clamp(1.5 - std::abs(2.0 * t - 1.0));
             double green = clamp(1.5 - std::abs(2.0 * t));

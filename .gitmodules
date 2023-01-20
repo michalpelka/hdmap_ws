@@ -11,3 +11,6 @@
 	path = src/ublox
 	url = https://github.com/KumarRobotics/ublox.git
 
+[submodule "src/livox_ros_driver2"]
+	path = src/livox_ros_driver2
+	url = https://github.com/Livox-SDK/livox_ros_driver2.git

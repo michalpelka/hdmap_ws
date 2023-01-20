@@ -1,3 +1,15 @@
+# Preapre building
+```
+cd /home/robot/hdmap_ws/src/livox_ros_driver2
+./build ROS1
+```
+build is expected to fail, but source in livox_ros_driver2 was adjusted to ROS1.
+Now: 
+```
+cd /home/robot/hdmap_ws/
+catkin_make -DROS_EDITION=ROS1
+```
+
 # Processing bag files
 
 ## Preparing an image
