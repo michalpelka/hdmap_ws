@@ -178,7 +178,6 @@ std::string produceReport() {
     pt.put("status.ublox.accuracy",ds::accuracy);
     pt.put("status.ublox.status",ds::status_ublox);
 
-
     // bag
     pt.put("status.bag.directory",ds::current_record_dir);
     int pid = -1;
@@ -192,25 +191,34 @@ std::string produceReport() {
 
     namespace fs = boost::filesystem;
     std::stringstream file_list;
-    if (fs::exists(ds::current_record_dir)) {
-        std::multimap<std::time_t, fs::path> dir_result_set;
-        for (const fs::directory_entry &f: fs::recursive_directory_iterator(ds::current_record_dir)) {
-            if (fs::is_regular_file(f.path())) {
-                const auto mod_time = fs::last_write_time(f.path());
-                dir_result_set.insert(std::pair<std::time_t, fs::path>(mod_time, f.path()));
+    try {
+        if (fs::exists(ds::current_record_dir)) {
+            std::multimap<std::time_t, fs::path> dir_result_set;
+            for (const fs::directory_entry &f: fs::recursive_directory_iterator(ds::current_record_dir)) {
+                if (fs::is_regular_file(f.path())) {
+                    const auto mod_time = fs::last_write_time(f.path());
+                    dir_result_set.insert(std::pair<std::time_t, fs::path>(mod_time, f.path()));
+                }
+            }
+            for (const auto &file_sorted: dir_result_set) {
+                const auto &f = file_sorted.second;
+                file_list << f.filename() << "   [ " << std::fixed << double(fs::file_size(f)) / (1024 * 1024 * 1024)
+                          << " ]\n";
             }
         }
-        for (const auto &file_sorted: dir_result_set) {
-            const auto &f = file_sorted.second;
-            file_list << f.filename() << "   [ " << std::fixed << double(fs::file_size(f)) / (1024 * 1024 * 1024)
-                      << " ]\n";
-        }
+        pt.put("status.bag.file_list", file_list.str());
+    }catch (const boost::filesystem::filesystem_error &e){
+        pt.put("status.bag.file_list", e.what());
     }
-    pt.put("status.bag.file_list", file_list.str());
-
     // disk space
-    boost::filesystem::space_info si = boost::filesystem::space("/");
-    pt.put("status.system.disk", float(si.available) / (1024*1024*1024));
+    const auto record_dir = fs::path(GetEnv(kEnvRepo));
+    try {
+        boost::filesystem::space_info si = boost::filesystem::space(record_dir);
+        pt.put("status.system.disk", std::to_string(float(si.available) / (1024*1024*1024))+" Gb");
+    } catch (const boost::filesystem::filesystem_error &e)
+    {
+        pt.put("status.system.disk", "failed\n"+record_dir.string()+"\n"+e.what());
+    }
 
     std::stringstream oss;
     boost::property_tree::write_json(oss, pt);
@@ -220,24 +228,27 @@ std::string produceReport() {
 std::string start_recording(const std::string& tt){
     namespace fs = boost::filesystem;
     if(ds::bag_process) return "nok";
-    std::lock_guard<std::mutex> lck(ds::global_lock);
+    try {
+        std::lock_guard<std::mutex> lck(ds::global_lock);
 
-    using sysclock_t = std::chrono::system_clock;
-    std::time_t now = sysclock_t::to_time_t(sysclock_t::now());
-    char buf[256] = { 0 };
-    std::strftime(buf, sizeof(buf), "%Y-%m-%d_%H-%M-%S", std::localtime(&now));
-    const auto record_dir = fs::path(GetEnv(kEnvRepo))/(std::string(buf));
-    fs::create_directory(record_dir);
-    ds::current_record_dir = record_dir.string();
+        using sysclock_t = std::chrono::system_clock;
+        std::time_t now = sysclock_t::to_time_t(sysclock_t::now());
+        char buf[256] = {0};
+        std::strftime(buf, sizeof(buf), "%Y-%m-%d_%H-%M-%S", std::localtime(&now));
+        const auto record_dir = fs::path(GetEnv(kEnvRepo)) / (std::string(buf));
+        fs::create_directory(record_dir);
+        ds::current_record_dir = record_dir.string();
 
-    std::cout <<"logging to " << ds::current_record_dir << std::endl;
-    std::vector<std::string> params_to_bag_process{"rosbag","record",
-                                                   "--split","--duration=2m","-o",(ds::current_record_dir+"/log")};
-    std::copy(std::begin(topics_to_record),std::end(topics_to_record), std::back_inserter(params_to_bag_process));
+        std::cout << "logging to " << ds::current_record_dir << std::endl;
+        std::vector<std::string> params_to_bag_process{"rosbag", "record",
+                                                       "--split", "--duration=2m", "-o",
+                                                       (ds::current_record_dir + "/log")};
+        std::copy(std::begin(topics_to_record), std::end(topics_to_record), std::back_inserter(params_to_bag_process));
 
-    ds::bag_process = std::shared_ptr<subprocess::Popen>(new subprocess::Popen(params_to_bag_process));
-
-
+        ds::bag_process = std::shared_ptr<subprocess::Popen>(new subprocess::Popen(params_to_bag_process));
+    }catch (const boost::filesystem::filesystem_error &e){
+         return(e.what());
+    }
     return "ok";
 }
 
@@ -248,6 +259,7 @@ std::string stop_recording(const std::string& tt){
         ds::bag_process->kill(2);
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
         ds::bag_process->kill(9);
+        std::cout <<"Stopping logging" << std::endl;
         ds::bag_process = nullptr;
     }
     if (ds::ubx_process){

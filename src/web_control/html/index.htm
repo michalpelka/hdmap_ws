@@ -23,7 +23,7 @@
                 $('.msgs_livox').text( obj.status.livox.count);
                 $('.msgs_ublox').text( obj.status.ublox.count);
                 $('.bag_info').text(obj.status.bag.file_list);
-                $('.disk').text(obj.status.system.disk+" Gb") ;
+                $('.disk').text(obj.status.system.disk) ;
                 $('.dir_name').text("Recording to : " + obj.status.bag.directory);
                 $('.diagnostic').text(obj.status.ublox.status +"\n" +obj.status.ublox.accuracy) ;
 
