@@ -221,10 +221,12 @@ std::string start_recording(const std::string& tt){
     namespace fs = boost::filesystem;
     if(ds::bag_process) return "nok";
     std::lock_guard<std::mutex> lck(ds::global_lock);
-    using namespace boost::posix_time;
-    ptime t = microsec_clock::universal_time();
 
-    const auto record_dir = fs::path(GetEnv(kEnvRepo))/(to_iso_extended_string(t));
+    using sysclock_t = std::chrono::system_clock;
+    std::time_t now = sysclock_t::to_time_t(sysclock_t::now());
+    char buf[256] = { 0 };
+    std::strftime(buf, sizeof(buf), "%Y-%m-%d_%H-%M-%S", std::localtime(&now));
+    const auto record_dir = fs::path(GetEnv(kEnvRepo))/(std::string(buf));
     fs::create_directory(record_dir);
     ds::current_record_dir = record_dir.string();
 
@@ -235,13 +237,6 @@ std::string start_recording(const std::string& tt){
 
     ds::bag_process = std::shared_ptr<subprocess::Popen>(new subprocess::Popen(params_to_bag_process));
 
-
-    std::vector<std::string> params_to_ubx_process{"str2str",
-                                                   "-in", "serial://ublox#ubx",
-                                                   "-out", (ds::current_record_dir+"/ubx_log.ubx"),
-                                                   "-out", "tcpsvr://:1889"};
-
-    ds::ubx_process = std::shared_ptr<subprocess::Popen>(new subprocess::Popen(params_to_ubx_process));
 
     return "ok";
 }
